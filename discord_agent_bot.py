@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 import asyncio
 import concurrent.futures
 
@@ -547,7 +548,6 @@ async def on_message(message: discord.Message):
     if channel_id not in channel_histories:
         channel_histories[channel_id] = []
         
-    import re
     # Clean username to conform to standard LLM name requirements: ^[a-zA-Z0-9_-]+$
     author_name = re.sub(r'[^a-zA-Z0-9_-]', '', message.author.name)
     if not author_name:
