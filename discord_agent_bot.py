@@ -227,7 +227,7 @@ def sync_agent_run(agent_instance, messages_list, placeholder=None, bot_loop=Non
     obsidian_tools.thread_local.user_id = user_id
 
     logger.info(f"sync_agent_run: starting execution. Messages payload count: {len(messages_list)}")
-    bot_response_content = "I encountered an issue processing your request."
+    bot_response_content = "❌ **I encountered an issue processing your request.**\n\n💡 *Tip: If the agent is stuck, try using `!clear` to reset the conversation history.*"
     last_status = ""
     last_update_time = 0.0
     response = []
