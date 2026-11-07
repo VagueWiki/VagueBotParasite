@@ -136,6 +136,8 @@ _io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # Map of channel_id -> list of conversational messages (excluding system messages)
 channel_histories = {}
+# Use a single-worker ThreadPoolExecutor to guarantee FIFO ordering of saves
+history_executor = ThreadPoolExecutor(max_workers=1)
 
 # Active conversation session tracking (channel_id -> (last_user_id, last_timestamp))
 active_sessions = {}
