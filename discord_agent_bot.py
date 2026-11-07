@@ -9,6 +9,8 @@ disk_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 import datetime
 import logging
 import time
+import copy
+import concurrent.futures
 from dotenv import load_dotenv
 
 import discord
