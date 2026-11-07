@@ -304,7 +304,7 @@ def sync_agent_run(agent_instance, messages_list, placeholder=None, bot_loop=Non
             
     except Exception as e:
         logger.error(f"Error in sync_agent_run: {e}")
-        bot_response_content = f"Error in agent processing: {e}"
+        bot_response_content = f"Error in agent processing: {e}\n\n💡 *Tip: Context bounds may have been reached. Try breaking down your request, or type `!clear` to reset the conversation state.*"
     finally:
         # Clean up the thread-local context on exit
         obsidian_tools.thread_local.message = None
