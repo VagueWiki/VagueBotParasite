@@ -1,17 +1,11 @@
 import os
 import sys
-import concurrent.futures
 import json
 import re
 import asyncio
-import concurrent.futures
-
-# Global single-worker executor to guarantee FIFO ordering for sequential state saving
-disk_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 import datetime
 import logging
 import time
-import copy
 import concurrent.futures
 from dotenv import load_dotenv
 
@@ -115,7 +109,8 @@ obsidian_tools.DISCORD_BOT = bot  # Set the reference in tools
 @bot.command()
 async def ping(ctx):
     logger.info("Ping command triggered.")
-    await ctx.reply("pong", mention_author=False)
+    latency_ms = round(bot.latency * 1000)
+    await ctx.reply(f"🏓 Pong! Latency: {latency_ms}ms", mention_author=False)
 
 @bot.command()
 async def clear(ctx):
@@ -131,24 +126,15 @@ async def clear(ctx):
 # File path for persistent chat histories
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "chat_history.json")
 
-# Single-worker thread pool executor to offload file I/O and prevent blocking the main event loop
-# A single worker guarantees FIFO execution to keep state writes sequential and safe
-_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+# Global single-worker executor to guarantee FIFO ordering for sequential state saving
+disk_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # Map of channel_id -> list of conversational messages (excluding system messages)
 channel_histories = {}
-# Use a single-worker ThreadPoolExecutor to guarantee FIFO ordering of saves
-history_executor = ThreadPoolExecutor(max_workers=1)
-
-# Single-worker thread pool for atomic background file writing
-_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # Active conversation session tracking (channel_id -> (last_user_id, last_timestamp))
 active_sessions = {}
 SESSION_TIMEOUT_SECONDS = 600  # 10 minutes
-
-# ThreadPoolExecutor for background file I/O operations (1 worker ensures sequential writes)
-io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 def load_histories():
     global channel_histories
@@ -189,18 +175,7 @@ def save_histories():
         # Offload blocking disk I/O (atomic write) to background thread to unblock async event loop
         disk_io_executor.submit(_write_history_to_disk, json_str)
     except Exception as e:
-        logger.error(f"Error saving chat histories in background task: {e}")
-
-def save_histories():
-    # Performance Optimization: Offload file I/O to background thread
-    # Serialize to JSON string in main thread using fast C-optimized json.dumps,
-    # avoiding slow deepcopy while ensuring thread-safety of the passed data.
-    try:
-        to_save = {str(k): v for k, v in channel_histories.items()}
-        json_string = json.dumps(to_save, ensure_ascii=False, indent=2)
-        _io_executor.submit(_save_histories_task, json_string)
-    except Exception as e:
-        logger.error(f"Error dispatching save_histories to background: {e}")
+        logger.error(f"Error saving chat histories: {e}")
 
 async def get_history_with_system_context(channel_id):
     """Rebuild conversation history by prepending the latest vault metadata from _CLAUDE.md."""
