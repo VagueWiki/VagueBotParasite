@@ -139,6 +139,9 @@ channel_histories = {}
 # Use a single-worker ThreadPoolExecutor to guarantee FIFO ordering of saves
 history_executor = ThreadPoolExecutor(max_workers=1)
 
+# Single-worker thread pool for atomic background file writing
+_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
 # Active conversation session tracking (channel_id -> (last_user_id, last_timestamp))
 active_sessions = {}
 SESSION_TIMEOUT_SECONDS = 600  # 10 minutes
