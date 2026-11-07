@@ -129,6 +129,10 @@ async def clear(ctx):
 # File path for persistent chat histories
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "chat_history.json")
 
+# Single-worker thread pool executor to offload file I/O and prevent blocking the main event loop
+# A single worker guarantees FIFO execution to keep state writes sequential and safe
+_io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
 # Map of channel_id -> list of conversational messages (excluding system messages)
 channel_histories = {}
 
