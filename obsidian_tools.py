@@ -88,7 +88,7 @@ async def _async_ask_user_with_buttons(bot, message: discord.Message, user_id: i
         return False, "User denied execution. Skip the current action."
     elif view.result == "switch":
         # Wait for the user to type their correction in the chat
-        prompt_msg = await message.channel.send(f"<@{user_id}> What tool or instruction should I use instead?")
+        prompt_msg = await message.channel.send(f"<@{user_id}> What tool or instruction should I use instead? (You have 60 seconds to reply)")
         
         def check(m):
             return m.author.id == user_id and m.channel.id == message.channel.id
@@ -98,6 +98,7 @@ async def _async_ask_user_with_buttons(bot, message: discord.Message, user_id: i
             reply = await bot.wait_for('message', check=check, timeout=60.0)
             return False, f"User requested to switch context/tool. New instructions: '{reply.content}'"
         except asyncio.TimeoutError:
+            await prompt_msg.edit(content=prompt_msg.content + "\n\n*⏳ Timed out waiting for response.*")
             return False, "User switch request timed out."
     else:
         return False, "Execution aborted: User did not respond within the timeout."
