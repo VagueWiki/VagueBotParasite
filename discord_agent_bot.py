@@ -136,6 +136,9 @@ channel_histories = {}
 active_sessions = {}
 SESSION_TIMEOUT_SECONDS = 600  # 10 minutes
 
+# ThreadPoolExecutor for background file I/O operations (1 worker ensures sequential writes)
+io_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
 def load_histories():
     global channel_histories
     if os.path.exists(HISTORY_FILE):
