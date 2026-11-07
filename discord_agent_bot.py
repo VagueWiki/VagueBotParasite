@@ -169,8 +169,10 @@ def _write_history_to_disk(json_str: str):
         logger.error(f"Error writing chat histories to disk: {e}")
 
 def save_histories():
+    """Optimized: Serializes state on main thread and offloads I/O to prevent blocking."""
     try:
         # Convert keys to strings for JSON serialization
+        # Serializing to string in main thread avoids 'dictionary changed size' during concurrent iteration
         to_save = {str(k): v for k, v in channel_histories.items()}
 
         # Serialize state to string in main thread to prevent concurrent modification errors,
