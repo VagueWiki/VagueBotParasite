@@ -602,3 +602,74 @@ class DiscordMessageSender(BaseTool):
             logger.error(f"Error in DiscordMessageSender: {e}", exc_info=True)
             return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
 
+
+@register_tool('send_keyboard_key')
+class HostKeySender(BaseTool):
+    description = 'Send a virtual key press (such as F5, escape, space, or function keys) to the host machine.'
+    parameters = [{
+        'name': 'key',
+        'type': 'string',
+        'description': 'The key to press, e.g. "f5", "f1"-"f12", "escape", "space". Defaults to "f5".',
+        'required': True,
+    }]
+
+    def call(self, params: str, **kwargs) -> str:
+        logger.info(f"HostKeySender called with params: {params}")
+        try:
+            args = json5.loads(params)
+            target_key = args.get('key', 'f5').lower().strip()
+            key_map = {
+                "f1": 0x70, "f2": 0x71, "f3": 0x72, "f4": 0x73,
+                "f5": 0x74, "f6": 0x75, "f7": 0x76, "f8": 0x77,
+                "f9": 0x78, "f10": 0x79, "f11": 0x7A, "f12": 0x7B,
+                "esc": 0x1B, "escape": 0x1B, "space": 0x20
+            }
+            if target_key not in key_map:
+                return json.dumps({"status": "error", "message": f"Unsupported key '{target_key}'."}, ensure_ascii=False)
+            
+            import ctypes
+            if hasattr(ctypes, 'windll') and hasattr(ctypes.windll, 'user32'):
+                vk_code = key_map[target_key]
+                KEYEVENTF_KEYUP = 0x0002
+                ctypes.windll.user32.keybd_event(vk_code, 0, 0, 0)
+                time.sleep(0.05)
+                ctypes.windll.user32.keybd_event(vk_code, 0, KEYEVENTF_KEYUP, 0)
+                return json.dumps({"status": "success", "message": f"Simulated keypress '{target_key.upper()}' on host."}, ensure_ascii=False)
+            else:
+                return json.dumps({"status": "error", "message": "Host is not Windows or user32.dll not accessible."}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Error in HostKeySender: {e}", exc_info=True)
+            return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
+
+
+@register_tool('terminate_process')
+class HostProcessTerminator(BaseTool):
+    description = 'Force terminate a running process (like an auto-clicker or stuck program) on the host machine.'
+    parameters = [{
+        'name': 'process_name',
+        'type': 'string',
+        'description': 'The name of the process/executable to terminate, e.g. "AutoClicker", "OPAutoClicker.exe".',
+        'required': True,
+    }]
+
+    def call(self, params: str, **kwargs) -> str:
+        logger.info(f"HostProcessTerminator called with params: {params}")
+        try:
+            import subprocess
+            args = json5.loads(params)
+            proc_name = args.get('process_name', '').strip()
+            if not proc_name:
+                return json.dumps({"status": "error", "message": "process_name is required."}, ensure_ascii=False)
+            if not proc_name.lower().endswith(".exe"):
+                proc_name += ".exe"
+            
+            res = subprocess.run(["taskkill", "/F", "/IM", proc_name], capture_output=True, text=True)
+            if res.returncode == 0:
+                return json.dumps({"status": "success", "message": f"Successfully terminated process '{proc_name}'."}, ensure_ascii=False)
+            else:
+                return json.dumps({"status": "error", "message": f"taskkill failed: {res.stderr.strip() or res.stdout.strip()}"}, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Error in HostProcessTerminator: {e}", exc_info=True)
+            return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
+
+

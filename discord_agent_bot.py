@@ -378,7 +378,9 @@ def get_agent_for_channel(channel_id):
         'vault_health_check',
         'discord_list_channels',
         'discord_read_channel_history',
-        'discord_send_message'
+        'discord_send_message',
+        'send_keyboard_key',
+        'terminate_process'
     ]
     agent = Assistant(
         llm=llm_cfg,
