@@ -123,6 +123,78 @@ async def clear(ctx):
     else:
         await ctx.reply("🧹 **No chat history found for this channel.**", mention_author=False)
 
+@bot.command()
+async def f5(ctx):
+    """Simulates pressing the F5 key on the Windows host machine."""
+    logger.info("F5 key simulation command triggered.")
+    try:
+        import ctypes
+        if hasattr(ctypes, 'windll') and hasattr(ctypes.windll, 'user32'):
+            VK_F5 = 0x74
+            KEYEVENTF_KEYUP = 0x0002
+            ctypes.windll.user32.keybd_event(VK_F5, 0, 0, 0)
+            await asyncio.sleep(0.05)
+            ctypes.windll.user32.keybd_event(VK_F5, 0, KEYEVENTF_KEYUP, 0)
+            await ctx.reply("⌨️ **Sent `F5` keypress to host.**", mention_author=False)
+        else:
+            await ctx.reply("⚠️ Host OS is not Windows or does not support `user32.dll`.", mention_author=False)
+    except Exception as e:
+        logger.error(f"Error sending F5 key: {e}")
+        await ctx.reply(f"❌ Failed to send F5 key: `{e}`", mention_author=False)
+
+@bot.command()
+async def sendkey(ctx, key_name: str):
+    """Simulates pressing a specified function key (f1-f12) or escape key on the Windows host machine."""
+    logger.info(f"Send key command triggered: {key_name}")
+    key_map = {
+        "f1": 0x70, "f2": 0x71, "f3": 0x72, "f4": 0x73,
+        "f5": 0x74, "f6": 0x75, "f7": 0x76, "f8": 0x77,
+        "f9": 0x78, "f10": 0x79, "f11": 0x7A, "f12": 0x7B,
+        "esc": 0x1B, "escape": 0x1B, "space": 0x20
+    }
+    target_key = key_name.lower().strip()
+    if target_key not in key_map:
+        supported = ", ".join(sorted(key_map.keys()))
+        await ctx.reply(f"⚠️ Unsupported key `{key_name}`. Supported keys: `{supported}`", mention_author=False)
+        return
+    try:
+        import ctypes
+        if hasattr(ctypes, 'windll') and hasattr(ctypes.windll, 'user32'):
+            vk_code = key_map[target_key]
+            KEYEVENTF_KEYUP = 0x0002
+            ctypes.windll.user32.keybd_event(vk_code, 0, 0, 0)
+            await asyncio.sleep(0.05)
+            ctypes.windll.user32.keybd_event(vk_code, 0, KEYEVENTF_KEYUP, 0)
+            await ctx.reply(f"⌨️ **Sent `{target_key.upper()}` keypress to host.**", mention_author=False)
+        else:
+            await ctx.reply("⚠️ Host OS is not Windows or does not support `user32.dll`.", mention_author=False)
+    except Exception as e:
+        logger.error(f"Error sending key {key_name}: {e}")
+        await ctx.reply(f"❌ Failed to send key: `{e}`", mention_author=False)
+
+@bot.command()
+async def killclicker(ctx, process_name: str = ""):
+    """Terminates auto-clicker processes on the Windows host machine."""
+    logger.info(f"killclicker triggered with process_name: '{process_name}'")
+    import subprocess
+    target_names = [process_name] if process_name else ["AutoClicker", "OPAutoClicker", "SpeedAutoClicker", "AutoHotkey", "AutoClicker.exe"]
+    results = []
+    for proc in target_names:
+        if not proc.lower().endswith(".exe"):
+            proc += ".exe"
+        try:
+            res = subprocess.run(["taskkill", "/F", "/IM", proc], capture_output=True, text=True)
+            if res.returncode == 0:
+                results.append(f"✅ Terminated `{proc}`")
+        except Exception as e:
+            results.append(f"❌ Error terminating `{proc}`: {e}")
+            
+    if results:
+        await ctx.reply("\n".join(results), mention_author=False)
+    else:
+        await ctx.reply("⚠️ No auto-clicker processes found running to terminate.", mention_author=False)
+
+
 # File path for persistent chat histories
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "chat_history.json")
 
